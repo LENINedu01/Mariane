@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flor Animada</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: black;
+            overflow: hidden;
+            position: relative;
+            color: white;
+        }
+
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+            animation: backgroundMove 10s linear infinite;
+        }
+
+        @keyframes backgroundMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(100px, 100px); }
+        }
+
+        .flower-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .side-roses {
+            font-size: 2rem;
+            writing-mode: vertical-lr;
+            text-align: center;
+            padding: 0 10px;
+            color: #ff3366;
+        }
+
+        .flower {
+            width: 380px;
+            height: 380px;
+            background: url('Screenshot_20240930_020953.jpg') no-repeat center/contain;
+            animation: float 3s ease-in-out infinite;
+            z-index: 1;
+            position: relative;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        h1 {
+            color: #ea07e2;
+            font-size: 2rem;
+            margin-top: 30px;
+            z-index: 1;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .flower {
+                width: 250px;
+                height: 250px;
+            }
+            h1 {
+                font-size: 1rem;
+            }
+            .side-roses {
+                display: none;
+            }
+        }
+
+        .heart {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: red;
+            transform: rotate(45deg);
+            animation: explode 4s ease-out forwards;
+            opacity: 0;
+            z-index: 0;
+        }
+
+        .heart::before,
+        .heart::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: red;
+            border-radius: 50%;
+        }
+
+        .heart::before {
+            top: -10px;
+            left: 0;
+        }
+
+        .heart::after {
+            left: -10px;
+            top: 0;
+        }
+
+        @keyframes explode {
+            0% {
+                transform: translate(0, 0) scale(1) rotate(45deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--x), var(--y)) scale(0.5) rotate(45deg);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="flower-container">
+        <div class="side-roses">🌹🌹🌹🌹🌹</div>
+        <div class="flower" id="flower"></div>
+        <div class="side-roses">🌹🌹🌹🌹🌹</div>
+    </div>
+    <h1>Perdóname, recuerda lo que vivimos</h1>
+
+    <script>
+        function createHeartExplosion() {
+            const heartCount = 20;
+            const flower = document.getElementById('flower');
+            const flowerRect = flower.getBoundingClientRect();
+            const centerX = flowerRect.left + flowerRect.width / 2;
+            const centerY = flowerRect.top;
+
+            for (let i = 0; i < heartCount; i++) {
+                const heart = document.createElement('div');
+                heart.classList.add('heart');
+
+                const x = (Math.random() - 0.5) * 800 + "px";
+                const y = (Math.random() - 1) * 800 + "px"; // dirección más hacia arriba
+
+                heart.style.setProperty('--x', x);
+                heart.style.setProperty('--y', y);
+
+                heart.style.left = centerX + 'px';
+                heart.style.top = centerY + 'px';
+
+                document.body.appendChild(heart);
+
+                setTimeout(() => {
+                    heart.remove();
+                }, 4000);
+            }
+        }
+
+        setInterval(createHeartExplosion, 2500);
+    </script>
+</body>
+</html>
+
