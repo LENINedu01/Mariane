@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tres en Raya</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #000;
+            color: white;
+            overflow: hidden;
+        }
+        h1 {
+            color: #701760;
+        }
+        table {
+            border-collapse: collapse;
+            margin: 20px;
+        }
+        td {
+            width: 100px;
+            height: 100px;
+            border: 2px solid #fff;
+            text-align: center;
+            font-size: 2rem;
+            cursor: pointer;
+            color: white;
+        }
+        td.disabled {
+            pointer-events: none;
+        }
+        #winMessage, #easyMessage {
+            display: none;
+            margin-top: 20px;
+            font-size: 1.5rem;
+            color: #c11ca2;
+        }
+        #winButton {
+            display: none;
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1rem;
+            background-color: #f00673;
+            border: none;
+            cursor: pointer;
+        }
+        .star {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 5px white;
+            animation: twinkle 2s infinite ease-in-out;
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>ganame primero 😼</h1>
+
+    <table id="ticTacToeBoard">
+        <tr>
+            <td onclick="playerMove(this, 0)"></td>
+            <td onclick="playerMove(this, 1)"></td>
+            <td onclick="playerMove(this, 2)"></td>
+        </tr>
+        <tr>
+            <td onclick="playerMove(this, 3)"></td>
+            <td onclick="playerMove(this, 4)"></td>
+            <td onclick="playerMove(this, 5)"></td>
+        </tr>
+        <tr>
+            <td onclick="playerMove(this, 6)"></td>
+            <td onclick="playerMove(this, 7)"></td>
+            <td onclick="playerMove(this, 8)"></td>
+        </tr>
+    </table>
+
+    <div id="winMessage">me ganaste</div>
+    <div id="easyMessage">no me rechases pues 😿</div>
+    <button id="winButton" onclick="location.href='untitled.html'">aceptar<3</button>
+
+    <script>
+        // Generar estrellas en el fondo
+        function createStars(num) {
+            for (let i = 0; i < num; i++) {
+                let star = document.createElement('div');
+                star.classList.add('star');
+                star.style.top = Math.random() * 100 + 'vh';
+                star.style.left = Math.random() * 100 + 'vw';
+                star.style.animationDuration = (Math.random() * 2 + 1) + 's';
+                document.body.appendChild(star);
+            }
+        }
+
+        createStars(100);
+
+        let board = ["", "", "", "", "", "", "", "", ""];
+        let currentPlayer = "🌹"; // El jugador humano es "🌹"
+        let gameOver = false;
+
+        function playerMove(cell, index) {
+            if (!gameOver && board[index] === "") {
+                board[index] = currentPlayer;
+                cell.textContent = currentPlayer;
+                cell.classList.add("disabled");
+
+                if (checkWin(currentPlayer)) {
+                    gameOver = true;
+                    document.getElementById('winMessage').style.display = 'block';
+                    document.getElementById('easyMessage').style.display = 'block';
+                    document.getElementById('winButton').style.display = 'block';
+                    return;
+                }
+                
+                // Si no ha ganado, juega el bot
+                if (!gameOver) {
+                    botMove();
+                }
+            }
+        }
+
+        function botMove() {
+            let emptyCells = board.map((val, index) => val === "" ? index : null).filter(val => val !== null);
+            if (emptyCells.length === 0) {
+                return; // No hay más movimientos
+            }
+
+            // Elige una celda aleatoria para el bot
+            let botIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            board[botIndex] = "O";
+            let cell = document.querySelectorAll("td")[botIndex];
+            cell.textContent = "O";
+            cell.classList.add("disabled");
+
+            if (checkWin("O")) {
+                gameOver = true;
+                alert("El bot ha ganado. Inténtalo de nuevo.");
+            }
+        }
+
+        function checkWin(player) {
+            const winPatterns = [
+                [0, 1, 2],
+                [3, 4, 5],
+                [6, 7, 8],
+                [0, 3, 6],
+                [1, 4, 7],
+                [2, 5, 8],
+                [0, 4, 8],
+                [2, 4, 6]
+            ];
+
+            return winPatterns.some(pattern => {
+                return pattern.every(index => board[index] === player);
+            });
+        }
+    </script>
+
+</body>
+</html>
