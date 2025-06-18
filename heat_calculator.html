@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Heat Transfer Calculator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="main-content-wrapper">
+        <h1>Heat Transfer Calculator</h1>
+
+        <label for="calculationType">Select Calculation Type:</label>
+        <select id="calculationType">
+            <option value="specificHeat" selected>Specific Heat</option>
+            <option value="thermalConductivity">Thermal Conductivity</option>
+        </select>
+
+        <div id="formulaContainer">
+            <!-- Specific Heat Section -->
+            <div id="specificHeatSection">
+                <label for="specificHeatFormulaSelect">Select Specific Heat Formula:</label>
+                <select id="specificHeatFormulaSelect">
+                    <option value="siebel">Siebel</option>
+                    <option value="charm">Charm</option>
+                    <option value="heldmanSingh">Heldman & Singh</option>
+                    <option value="choiOkos">Choi & Okos</option>
+                </select>
+                <div id="specificHeatInputsContainer">
+                    <!-- Input fields will be dynamically added here -->
+                </div>
+                <button id="calculateSpecificHeatButton">Calculate Specific Heat</button>
+            </div>
+
+            <!-- Thermal Conductivity Section -->
+            <div id="thermalConductivityFormulaContainer" style="display:none;">
+                <h3>Sweat's Formula for Thermal Conductivity</h3>
+                <p class="instructions">Enter mass fractions (e.g., 0.60 for 60%) for each component. The sum of fractions should ideally be 1 (or 100%).</p>
+                <div class="component-input-group">
+                    <label for="sweatWater">Water (Xw):</label>
+                    <input type="number" id="sweatWater" step="0.01" placeholder="e.g., 0.60">
+                </div>
+                <div class="component-input-group">
+                    <label for="sweatProtein">Protein (Xp):</label>
+                    <input type="number" id="sweatProtein" step="0.01" placeholder="e.g., 0.10">
+                </div>
+                <div class="component-input-group">
+                    <label for="sweatFat">Fat (Xf):</label>
+                    <input type="number" id="sweatFat" step="0.01" placeholder="e.g., 0.05">
+                </div>
+                <div class="component-input-group">
+                    <label for="sweatCarbohydrate">Carbohydrates (Xc):</label>
+                    <input type="number" id="sweatCarbohydrate" step="0.01" placeholder="e.g., 0.20">
+                </div>
+                <div class="component-input-group">
+                    <label for="sweatAsh">Ash (Xa):</label>
+                    <input type="number" id="sweatAsh" step="0.01" placeholder="e.g., 0.05">
+                </div>
+                <button id="calculateThermalConductivityButton">Calculate Thermal Conductivity</button>
+            </div>
+        </div>
+
+        <div id="resultContainer">
+            <!-- Calculation results will be displayed here -->
+        </div>
+    </div> <!-- Close main-content-wrapper -->
+
+    <script src="specific_heat.js"></script>
+    <script src="thermal_conductivity.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Main selection
+            const calculationTypeSelect = document.getElementById('calculationType');
+            const resultContainer = document.getElementById('resultContainer');
+
+            // Specific Heat elements
+            const specificHeatSection = document.getElementById('specificHeatSection');
+            const specificHeatFormulaSelect = document.getElementById('specificHeatFormulaSelect');
+            const specificHeatInputsContainer = document.getElementById('specificHeatInputsContainer');
+            const calculateSpecificHeatButton = document.getElementById('calculateSpecificHeatButton');
+
+            // Thermal Conductivity elements
+            const thermalConductivityFormulaContainer = document.getElementById('thermalConductivityFormulaContainer');
+            const calculateThermalConductivityButton = document.getElementById('calculateThermalConductivityButton');
+
+            function displayError(message) {
+                resultContainer.innerHTML = `<span class="error-message">${message}</span>`;
+            }
+
+            function displayResult(message) {
+                resultContainer.textContent = message;
+                resultContainer.classList.remove('error-message'); // Ensure not styled as error
+            }
+
+
+            function updateSpecificHeatInputs() {
+                specificHeatInputsContainer.innerHTML = '';
+                const selectedFormula = specificHeatFormulaSelect.value;
+
+                if (selectedFormula === "siebel") {
+                    specificHeatInputsContainer.innerHTML = `
+                        <label for="siebelWaterContent">Water Content (%):</label>
+                        <input type="number" id="siebelWaterContent" placeholder="e.g., 75">
+                    `;
+                } else if (selectedFormula === "charm") {
+                    specificHeatInputsContainer.innerHTML = `
+                        <label for="charmWater">Mass Fraction of Water (0-1):</label>
+                        <input type="number" id="charmWater" step="0.01" placeholder="e.g., 0.75">
+                        <label for="charmSolids">Mass Fraction of Solids (0-1):</label>
+                        <input type="number" id="charmSolids" step="0.01" placeholder="e.g., 0.25">
+                    `;
+                } else if (selectedFormula === "heldmanSingh") {
+                    specificHeatInputsContainer.innerHTML = `
+                        <label for="heldmanSinghComponents">Components (JSON format):</label>
+                        <p class="instructions">
+                            Enter as JSON array, e.g.:<br>
+                            [{"massFraction": 0.75, "specificHeatValue": 4.18}, {"massFraction": 0.25, "specificHeatValue": 1.5}]
+                        </p>
+                        <textarea id="heldmanSinghComponents" rows="4"></textarea>
+                    `;
+                } else if (selectedFormula === "choiOkos") {
+                    specificHeatInputsContainer.innerHTML = `
+                        <p class="instructions">Enter mass fractions (0-1) for each component. Sum should be ~1.</p>
+                        <div class="component-input-group">
+                            <label for="choiOkosWater">Water:</label>
+                            <input type="number" id="choiOkosWater" step="0.01" placeholder="e.g., 0.60">
+                        </div>
+                        <div class="component-input-group">
+                            <label for="choiOkosProtein">Protein:</label>
+                            <input type="number" id="choiOkosProtein" step="0.01" placeholder="e.g., 0.15">
+                        </div>
+                        <div class="component-input-group">
+                            <label for="choiOkosFat">Fat:</label>
+                            <input type="number" id="choiOkosFat" step="0.01" placeholder="e.g., 0.10">
+                        </div>
+                        <div class="component-input-group">
+                            <label for="choiOkosCarbohydrate">Carbohydrate:</label>
+                            <input type="number" id="choiOkosCarbohydrate" step="0.01" placeholder="e.g., 0.12">
+                        </div>
+                        <div class="component-input-group">
+                            <label for="choiOkosAsh">Ash:</label>
+                            <input type="number" id="choiOkosAsh" step="0.01" placeholder="e.g., 0.03">
+                        </div>
+                    `;
+                }
+            }
+
+            specificHeatFormulaSelect.addEventListener('change', updateSpecificHeatInputs);
+
+            calculateSpecificHeatButton.addEventListener('click', function () {
+                const selectedFormula = specificHeatFormulaSelect.value;
+                let result;
+                resultContainer.textContent = '';
+                resultContainer.classList.remove('error-message');
+
+
+                try {
+                    if (selectedFormula === "siebel") {
+                        const waterContent = parseFloat(document.getElementById('siebelWaterContent').value);
+                        result = calculateSiebel(waterContent);
+                    } else if (selectedFormula === "charm") {
+                        const water = parseFloat(document.getElementById('charmWater').value);
+                        const solids = parseFloat(document.getElementById('charmSolids').value);
+                        result = calculateCharm(water, solids);
+                    } else if (selectedFormula === "heldmanSingh") {
+                        const componentsText = document.getElementById('heldmanSinghComponents').value;
+                        if (!componentsText.trim()) {
+                            displayError("Error: JSON input for Heldman & Singh cannot be empty.");
+                            return;
+                        }
+                        const components = JSON.parse(componentsText);
+                        result = calculateHeldmanSingh(components);
+                    } else if (selectedFormula === "choiOkos") {
+                        const inputs = {
+                            water: document.getElementById('choiOkosWater').value,
+                            protein: document.getElementById('choiOkosProtein').value,
+                            fat: document.getElementById('choiOkosFat').value,
+                            carbohydrate: document.getElementById('choiOkosCarbohydrate').value,
+                            ash: document.getElementById('choiOkosAsh').value
+                        };
+                        const components = [];
+                        let hasInputs = false;
+                        for (const key in inputs) {
+                            if (inputs[key]) { // check if field has any input
+                                hasInputs = true;
+                                const val = parseFloat(inputs[key]);
+                                // Do not add if parseFloat results in NaN and original input was not just "0" or empty
+                                if (!isNaN(val) || (inputs[key].trim() === "0")) {
+                                   components.push({ name: key, massFraction: isNaN(val) ? 0 : val }); // Use 0 if parse fails but field had text
+                                } else {
+                                     displayError(`Error: Invalid number entered for ${key} in Choi & Okos.`);
+                                     return;
+                                }
+                            } else {
+                                // Add component with 0 massFraction if you want to pass all defined components to the function
+                                // components.push({ name: key, massFraction: 0 });
+                            }
+                        }
+
+                        if (!hasInputs) {
+                             displayError("Error: At least one component mass fraction must be entered for Choi & Okos.");
+                             return;
+                        }
+                        // Filter out components that were empty and thus not pushed, unless you always push them with 0
+                        const validComponents = components.filter(c => c.massFraction !== undefined);
+                        if(validComponents.length === 0 && hasInputs){ // Edge case: inputs were non-numeric only
+                             displayError("Error: All entered values for Choi & Okos are invalid.");
+                             return;
+                        }
+
+                        result = calculateChoiOkos(validComponents);
+                    }
+
+                    if (isNaN(result)) {
+                        displayError("Error: Calculation failed. Please check your inputs (e.g., ensure numbers are valid, JSON is correct, or all necessary fields are filled).");
+                    } else {
+                        displayResult("Specific Heat: " + result.toFixed(4) + " kJ/kg·K");
+                    }
+                } catch (error) {
+                    console.error("Specific Heat Calculation error:", error);
+                    displayError("Error: Could not perform calculation. " + error.message);
+                }
+            });
+
+            calculateThermalConductivityButton.addEventListener('click', function() {
+                resultContainer.textContent = '';
+                resultContainer.classList.remove('error-message');
+                try {
+                    const inputs = {
+                        water: document.getElementById('sweatWater').value,
+                        protein: document.getElementById('sweatProtein').value,
+                        fat: document.getElementById('sweatFat').value,
+                        carbohydrate: document.getElementById('sweatCarbohydrate').value,
+                        ash: document.getElementById('sweatAsh').value
+                    };
+
+                    const components = {};
+                    let hasInputs = false;
+                    let sumMassFractions = 0;
+
+                    for (const key in inputs) {
+                        if (inputs[key]) { // If there is any text in the input field
+                            hasInputs = true;
+                            const val = parseFloat(inputs[key]);
+                            if (isNaN(val)) {
+                                displayError(`Error: Invalid number entered for ${key}. Please use decimals (e.g., 0.1 for 10%).`);
+                                return;
+                            }
+                            if (val < 0 || val > 1) {
+                                displayError(`Error: Mass fraction for ${key} (${val}) must be between 0 and 1.`);
+                                return;
+                            }
+                            components[key] = val;
+                            sumMassFractions += val;
+                        } else {
+                            components[key] = 0; // Treat empty as zero for calculation
+                        }
+                    }
+
+                    if (!hasInputs) {
+                        displayError("Error: At least one component mass fraction must be entered for Sweat's formula.");
+                        return;
+                    }
+
+                    // Optional: Warn if sum is not close to 1, but still calculate
+                    // if (Math.abs(sumMassFractions - 1.0) > 0.01 && sumMassFractions > 0) { // Check if sum is not 1 (allowing for small deviations)
+                    //     console.warn(`Sum of mass fractions is ${sumMassFractions.toFixed(2)}, not 1.00. Calculation will proceed.`);
+                    // }
+
+
+                    const result = calculateSweatThermalConductivity(components);
+
+                    if (isNaN(result)) {
+                        displayError("Error: Calculation failed. Please ensure all inputs are valid numbers (0-1).");
+                    } else {
+                        displayResult("Thermal Conductivity (k): " + result.toFixed(4) + " W/m·K");
+                    }
+                } catch (error) {
+                    console.error("Thermal Conductivity Calculation error:", error);
+                    displayError("Error: Could not perform calculation. " + error.message);
+                }
+            });
+
+            calculationTypeSelect.addEventListener('change', function() {
+                resultContainer.textContent = '';
+                resultContainer.classList.remove('error-message');
+                if (this.value === 'specificHeat') {
+                    specificHeatSection.style.display = 'block';
+                    thermalConductivityFormulaContainer.style.display = 'none';
+                    updateSpecificHeatInputs();
+                } else if (this.value === 'thermalConductivity') {
+                    specificHeatSection.style.display = 'none';
+                    thermalConductivityFormulaContainer.style.display = 'block';
+                }
+            });
+
+            function initializeUI() {
+                if (calculationTypeSelect.value === 'specificHeat') {
+                    specificHeatSection.style.display = 'block';
+                    thermalConductivityFormulaContainer.style.display = 'none';
+                    updateSpecificHeatInputs();
+                } else {
+                    specificHeatSection.style.display = 'none';
+                    thermalConductivityFormulaContainer.style.display = 'block';
+                }
+                resultContainer.textContent = ''; // Clear result container on init
+            }
+
+            initializeUI();
+        });
+    </script>
+</body>
+</html>
